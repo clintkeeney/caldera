@@ -104,16 +104,16 @@ class GetComputers(Step):
 
         return True
 
-class CybereasonPowerShell (Step):
+class CybereasonPowershell (Step):
     """
     Description:
-        This step invokes Powershell as a child process of another process.
+        This step invokes Powershell to take control of target machine.
     Requirements:
         Requires Powershell injection into another process to conceal Powershell process.
     """
     attack_mapping = [('T1086', 'Execution'), ('T1064', 'Defense Evasion'), ('T1064', 'Execution'), ('T1018', 'Discovery'), ('T1106', 'Execution')]
-    display_name = "get_computers"
-    summary = "Use PowerView to query the Active Directory server for a list of computers in the Domain"
+    display_name = "Powershell"
+    summary = "Invoke Powershell to take control of target machine"
 
     preconditions = [("rat", OPRat)]
     postconditions = [("host_g", OPHost),
