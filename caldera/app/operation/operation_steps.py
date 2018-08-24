@@ -104,7 +104,54 @@ class GetComputers(Step):
 
         return True
 
+class CybereasonPowerShell (Step):
+    """
+    Description:
+        This step invokes Powershell as a child process of another process.
+    Requirements:
+        Requires Powershell injection into another process to conceal Powershell process.
+    """
+    attack_mapping = [('T1086', 'Execution'), ('T1064', 'Defense Evasion'), ('T1064', 'Execution'), ('T1018', 'Discovery'), ('T1106', 'Execution')]
+    display_name = "get_computers"
+    summary = "Use PowerView to query the Active Directory server for a list of computers in the Domain"
 
+    preconditions = [("rat", OPRat)]
+    postconditions = [("host_g", OPHost),
+                      ("os_version_g", OPOSVersion)]
+
+    postproperties = ["host_g.fqdn", "host_g.os_version"]
+
+    significant_parameters = []
+
+    cddl = """
+    Knowns:
+        rat: OPRat
+    Effects:
+        if not exist rat {
+            forget rat
+        } else {
+            know rat[host[domain[hosts[fqdn, os_version]]]]
+        }   
+    """
+
+    @staticmethod
+    def description():
+        return "Enumerating all computers in the domain"
+
+    @staticmethod
+    async def action(operation: OperationWrapper, rat: ObservedRat, host_g, os_version_g):
+        objects = await operation.execute_powershell(rat, 'powerview', PSFunction("Get-DomainComputer"),
+                                                     parsers.powerview.getdomaincomputer)
+        in_scope_fqdns = operation.filter_fqdns(objects.keys())
+
+        # save fqdns & os versions
+        for fqdn in in_scope_fqdns:
+            os_version = await os_version_g({**objects[fqdn]['parsed_version_info']})
+            await host_g({'fqdn': fqdn, 'os_version': os_version})
+
+        return True
+    
+    
 class GetAdmin(Step):
     """
     Description:
